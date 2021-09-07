@@ -12,8 +12,12 @@ function App() {
   const [data, setData] = useState([]);
 
   const [modalIncluir, setModalIncluir] = useState(false);
+  const [modalEditar, setModalEditar] = useState(false);
+  const [modalExcluir, setModalExcluir] = useState(false);
 
-  const [clienteSelecionado, setClienteSelecionado] = useState({
+
+
+  const [cadastroSelecionado, setCadastroSelecionado] = useState({
     id: '',
     nome: '',
     email: '',
@@ -25,12 +29,20 @@ function App() {
     setModalIncluir(!modalIncluir);
   }
 
+  const abrirFecharModalEditar = () => {
+    setModalEditar(!modalEditar);
+  }
+
+  const abrirFecharModalExcluir = () => {
+    setModalExcluir(!modalExcluir);
+  }
+
   const handleChange = e => {
     const { name, value } = e.target;
-    setClienteSelecionado({
-      ...clienteSelecionado, [name]: value
+    setCadastroSelecionado({
+      ...cadastroSelecionado, [name]: value
     });
-    console.log(clienteSelecionado);
+    console.log(cadastroSelecionado);
   }
 
   const pedidoGet = async () => {
@@ -42,9 +54,29 @@ function App() {
       })
   }
 
+  const pedidoPut = async () => {
+    await axios.put(baseUrl + "/" + cadastroSelecionado.id, cadastroSelecionado)
+      .then(response => {
+        var resposta = response.data;
+        var dadosAuxiliar = data;
+        dadosAuxiliar.map(cadastro => {
+          if (cadastro.id === cadastroSelecionado.id) {
+            cadastro.nome = resposta.nome;
+            cadastro.celular = resposta.celular;
+            cadastro.email = resposta.email;
+            cadastro.cpfcnpj = resposta.cpfcnpj;
+            cadastro.dataNascimento = resposta.dataNascimento;
+          }
+        });
+        abrirFecharModalEditar()
+      }).catch(error => {
+        console.log(error);
+      })
+  }
+
   const pedidoPost = async () => {
-    delete clienteSelecionado.id;
-    await axios.post(baseUrl, clienteSelecionado)
+    delete cadastroSelecionado.id;
+    await axios.post(baseUrl, cadastroSelecionado)
       .then(response => {
         setData(data.concat(response.data));
         abrirFecharModalIncluir();
@@ -53,12 +85,40 @@ function App() {
       })
   }
 
+  const pedidoDelete = async () => {
+    await axios.delete(baseUrl + "/" + cadastroSelecionado.id, cadastroSelecionado)
+      .then(response => {
+        abrirFecharModalExcluir();
+      })
+      .catch(error => {
+        alert(error.response.data);
+        console.log(error);
+      })
+  }
+
   useEffect(() => {
     pedidoGet();
   });
 
+  const selecionarCadastro = (cadastro, opcao) => {
+    setCadastroSelecionado(cadastro);
+    if (opcao === "Editar") {
+      abrirFecharModalEditar();
+    }
+    if (opcao === "Excluir") {
+      abrirFecharModalExcluir();
+    }
+  }
+
+  function dataAtualFormatada(data) {
+    var dia = data.getDate().toString().padStart(2, '0'),
+      mes = (data.getMonth() + 1).toString().padStart(2, '0'), //+1 pois no getMonth Janeiro começa com zero.
+      ano = data.getFullYear();
+    return ano + "-" + mes + "-" + dia;
+  }
+
   return (
-    <div className="aluno-container">
+    <div className="cadastro-container">
       <div className="logoBellaDonna">
         <img src={logoHeader} alt='LogoBellaDonna' />
         <br />
@@ -80,16 +140,16 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {data.map(pessoa => (
-            <tr key={pessoa.id}>
-              <td>{pessoa.nome}</td>
-              <td>{pessoa.celularFormat}</td>
-              <td>{pessoa.email}</td>
-              <td>{pessoa.cpfcnpj}</td>
-              <td>{pessoa.dataNascimentoFormat}</td>
+          {data.map(cadastro => (
+            <tr key={cadastro.id}>
+              <td>{cadastro.nome}</td>
+              <td>{cadastro.celularFormat}</td>
+              <td>{cadastro.email}</td>
+              <td>{cadastro.cpfcnpj}</td>
+              <td>{cadastro.dataNascimentoFormat}</td>
               <td>
-                <button className="btn btn-primary">Editar</button> {" "}
-                <button className="btn btn-danger">Excluir</button>
+                <button className="btn btn-primary" onClick={() => selecionarCadastro(cadastro, "Editar")}>Editar</button> {" "}
+                <button className="btn btn-danger" onClick={() => selecionarCadastro(cadastro, "Excluir")}>Excluir</button>
               </td>
             </tr>
           ))}
@@ -97,7 +157,7 @@ function App() {
       </table>
 
       <Modal isOpen={modalIncluir}>
-        <ModalHeader>Incluir Cliente</ModalHeader>
+        <ModalHeader>Incluir Cadastro</ModalHeader>
         <ModalBody>
           <div className="form-group">
             <label>Nome: </label>
@@ -114,7 +174,7 @@ function App() {
             <br />
             <label>Celular: </label>
             <br />
-            <input type="text" className="form-control" name="celularFormat" onChange={handleChange} />
+            <input type="text" className="form-control" name="celular" onChange={handleChange} />
             <br />
             <label>Data de Nascimento: </label>
             <br />
@@ -124,6 +184,80 @@ function App() {
         <ModalFooter>
           <button className="btn btn-primary" onClick={() => pedidoPost()}>Incluir</button>{" "}
           <button className="btn btn-danger" onClick={() => abrirFecharModalIncluir()}>Cancelar</button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={modalEditar}>
+        <ModalHeader>Editar Cadastro</ModalHeader>
+        <ModalBody>
+          <div className="form-group">
+            <input type="hidden" className="form-control" readOnly value={cadastroSelecionado && cadastroSelecionado.id} />
+            <label>Nome: </label>
+            <br />
+            <input type="text" className="form-control" name="nome" onChange={handleChange}
+              value={cadastroSelecionado && cadastroSelecionado.nome} />
+            <br />
+            <label>Email: </label>
+            <br />
+            <input type="email" className="form-control" name="email" onChange={handleChange}
+              value={cadastroSelecionado && cadastroSelecionado.email} />
+            <br />
+            <label>CPF: </label>
+            <br />
+            <input type="text" className="form-control" name="cpfcnpj" onChange={handleChange}
+              value={cadastroSelecionado && cadastroSelecionado.cpfcnpj} />
+            <br />
+            <label>Celular: </label>
+            <br />
+            <input type="text" className="form-control" name="celularFormat" onChange={handleChange}
+              value={cadastroSelecionado && cadastroSelecionado.celular} />
+            <br />
+            <label>Data de Nascimento: </label>
+            <br />
+            <input type="date" className="form-control" name="dataNascimento" onChange={handleChange}
+              value={cadastroSelecionado && dataAtualFormatada(new Date(cadastroSelecionado.dataNascimento))} />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <button className="btn btn-primary" onClick={() => pedidoPut()}>Editar</button>{" "}
+          <button className="btn btn-danger" onClick={() => abrirFecharModalEditar()}>Cancelar</button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={modalExcluir}>
+        <ModalHeader>Excluir Cadastro</ModalHeader>
+        <ModalBody>
+          <div className="form-group">
+            <input type="hidden" className="form-control" readOnly value={cadastroSelecionado && cadastroSelecionado.id} />
+            <label>Nome: </label>
+            <br />
+            <input type="text" className="form-control" name="nome" onChange={handleChange}
+              readOnly value={cadastroSelecionado && cadastroSelecionado.nome} />
+            <br />
+            <label>Email: </label>
+            <br />
+            <input type="email" className="form-control" name="email" onChange={handleChange}
+              readOnly value={cadastroSelecionado && cadastroSelecionado.email} />
+            <br />
+            <label>CPF: </label>
+            <br />
+            <input type="text" className="form-control" name="cpfcnpj" onChange={handleChange}
+              readOnly value={cadastroSelecionado && cadastroSelecionado.cpfcnpj} />
+            <br />
+            <label>Celular: </label>
+            <br />
+            <input type="text" className="form-control" name="celularFormat" onChange={handleChange}
+              readOnly value={cadastroSelecionado && cadastroSelecionado.celularFormat} />
+            <br />
+            <label>Data de Nascimento: </label>
+            <br />
+            <input type="date" className="form-control" name="dataNascimento" onChange={handleChange}
+              readOnly value={cadastroSelecionado && dataAtualFormatada(new Date(cadastroSelecionado.dataNascimento))} />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <button className="btn btn-primary" onClick={() => pedidoDelete()}>Excluir</button>{" "}
+          <button className="btn btn-danger" onClick={() => abrirFecharModalExcluir()}>Cancelar</button>
         </ModalFooter>
       </Modal>
 

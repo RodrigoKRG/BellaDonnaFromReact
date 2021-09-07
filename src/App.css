@@ -1,8 +1,4 @@
-* {
-  background-color: rgb(247, 236, 236);
-}
-
-.aluno-container {
+.cadastro-container {
   width: 100%;
   max-width: 1200px;
   padding: 5 10px;
@@ -22,17 +18,17 @@
   text-align: center;
 }
 
-.aluno-container header {
+.cadastro-container header {
   display: flex;
   align-items: center;
 }
 
-.aluno-container header img {
+.cadastro-container header img {
   height: 50px;
   margin-left: 15px;
 }
 
-.aluno-container header button {
+.cadastro-container header button {
   height: 50px;
   width: 200px;
   border-radius: 5px;
@@ -42,7 +38,7 @@
   transition: border-color 0,5s;
 }
 
-.aluno-container header button:hover {
+.cadastro-container header button:hover {
   border-color: #510bac;
 }
 
