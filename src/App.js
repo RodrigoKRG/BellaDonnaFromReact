@@ -14,6 +14,7 @@ function App() {
   const [modalIncluir, setModalIncluir] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
   const [modalExcluir, setModalExcluir] = useState(false);
+  const [updateData, setUpdateData] = useState(true);
 
 
 
@@ -68,6 +69,7 @@ function App() {
             cadastro.dataNascimento = resposta.dataNascimento;
           }
         });
+        setUpdateData(true);
         abrirFecharModalEditar()
       }).catch(error => {
         console.log(error);
@@ -79,6 +81,7 @@ function App() {
     await axios.post(baseUrl, cadastroSelecionado)
       .then(response => {
         setData(data.concat(response.data));
+        setUpdateData(true);
         abrirFecharModalIncluir();
       }).catch(error => {
         console.log(error);
@@ -86,8 +89,10 @@ function App() {
   }
 
   const pedidoDelete = async () => {
-    await axios.delete(baseUrl + "/" + cadastroSelecionado.id, cadastroSelecionado)
+    await axios.delete(baseUrl + "/" + cadastroSelecionado.id)
       .then(response => {
+        setData(data.filter(cadastro => cadastro.id !== response.data));
+        setUpdateData(true);
         abrirFecharModalExcluir();
       })
       .catch(error => {
@@ -97,17 +102,16 @@ function App() {
   }
 
   useEffect(() => {
-    pedidoGet();
-  });
+    if (updateData) {
+      pedidoGet();
+      setUpdateData(false);
+    }
+  }, [updateData]);
 
   const selecionarCadastro = (cadastro, opcao) => {
     setCadastroSelecionado(cadastro);
-    if (opcao === "Editar") {
-      abrirFecharModalEditar();
-    }
-    if (opcao === "Excluir") {
-      abrirFecharModalExcluir();
-    }
+    (opcao === "Editar") ? abrirFecharModalEditar() : abrirFecharModalExcluir();
+
   }
 
   function dataAtualFormatada(data) {
@@ -209,7 +213,7 @@ function App() {
             <br />
             <label>Celular: </label>
             <br />
-            <input type="text" className="form-control" name="celularFormat" onChange={handleChange}
+            <input type="text" className="form-control" name="celular" onChange={handleChange}
               value={cadastroSelecionado && cadastroSelecionado.celular} />
             <br />
             <label>Data de Nascimento: </label>
@@ -227,37 +231,11 @@ function App() {
       <Modal isOpen={modalExcluir}>
         <ModalHeader>Excluir Cadastro</ModalHeader>
         <ModalBody>
-          <div className="form-group">
-            <input type="hidden" className="form-control" readOnly value={cadastroSelecionado && cadastroSelecionado.id} />
-            <label>Nome: </label>
-            <br />
-            <input type="text" className="form-control" name="nome" onChange={handleChange}
-              readOnly value={cadastroSelecionado && cadastroSelecionado.nome} />
-            <br />
-            <label>Email: </label>
-            <br />
-            <input type="email" className="form-control" name="email" onChange={handleChange}
-              readOnly value={cadastroSelecionado && cadastroSelecionado.email} />
-            <br />
-            <label>CPF: </label>
-            <br />
-            <input type="text" className="form-control" name="cpfcnpj" onChange={handleChange}
-              readOnly value={cadastroSelecionado && cadastroSelecionado.cpfcnpj} />
-            <br />
-            <label>Celular: </label>
-            <br />
-            <input type="text" className="form-control" name="celularFormat" onChange={handleChange}
-              readOnly value={cadastroSelecionado && cadastroSelecionado.celularFormat} />
-            <br />
-            <label>Data de Nascimento: </label>
-            <br />
-            <input type="date" className="form-control" name="dataNascimento" onChange={handleChange}
-              readOnly value={cadastroSelecionado && dataAtualFormatada(new Date(cadastroSelecionado.dataNascimento))} />
-          </div>
+          Confirma a exclusão deste(a) cliente : {cadastroSelecionado && cadastroSelecionado.nome}
         </ModalBody>
         <ModalFooter>
-          <button className="btn btn-primary" onClick={() => pedidoDelete()}>Excluir</button>{" "}
-          <button className="btn btn-danger" onClick={() => abrirFecharModalExcluir()}>Cancelar</button>
+          <button className="btn btn-danger" onClick={() => pedidoDelete()}>Sim</button>{" "}
+          <button className="btn btn-secondary" onClick={() => abrirFecharModalExcluir()}>Não</button>
         </ModalFooter>
       </Modal>
 
